@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
 db = [
@@ -35,8 +37,13 @@ def health_check():
     return { "status": "ok" }
 
 @app.get("/tasks")
-def get_tasks():
-    return db
+def get_tasks(done: Optional[bool] = None, search: Optional[str] = None):
+    filtered_tasks = db
+    if done is not None:
+        filtered_tasks = [task for task in filtered_tasks if task["done"] == done]
+    if search is not None:
+        filtered_tasks = [task for task in filtered_tasks if search.lower() in task["title"].lower()]
+    return filtered_tasks
 
 @app.get("/tasks/{id}")
 def get_task(id: int):
@@ -131,3 +138,6 @@ def delete_task(id: int, status_code: int = 204):
         status_code=404,
         content={"message": f"Task {id} not found"}
     )
+
+
+    

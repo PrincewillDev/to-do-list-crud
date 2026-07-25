@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 db = [
     {
         "id": 1,
@@ -44,3 +44,18 @@ def get_task(id: int):
         if task["id"] == id:
             return task
     return JSONResponse(status_code=404, content={"message": f"Task {id} not found"},)
+
+@app.post("/tasks", status_code=201)
+def create_task(task: dict):
+    title = task.get("title")
+    if title is None or not isinstance(title, str) or title.strip() == "":
+        return JSONResponse(status_code=400, content={"message": "Title is required"})
+    next_id = max(task["id"] for task in db) + 1 if db else 1
+
+    new_task = {
+        "id": next_id,
+        "title": title.strip(),
+        "done": task.get("done", False)
+    }
+    db.append(new_task)
+    return new_task

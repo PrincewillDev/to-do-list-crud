@@ -59,3 +59,75 @@ def create_task(task: dict):
     }
     db.append(new_task)
     return new_task
+
+@app.put("/tasks/{id}")
+def update_task(id: int, payload: dict):
+    allowed_fields = {"title", "done"}
+
+    if not payload:
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Request body is required"}
+        )
+
+    if not set(payload).issubset(allowed_fields):
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Only title and done fields are allowed"}
+        )
+
+    if "title" not in payload and "done" not in payload:
+        return JSONResponse(
+            status_code=400,
+            content={"message": "At least one of title or done must be provided"}
+        )
+
+    if "title" in payload:
+        title = payload["title"]
+
+        if not isinstance(title, str):
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Title must be a string"}
+            )
+
+        if not title.strip():
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Title cannot be empty"}
+            )
+
+    if "done" in payload:
+        done = payload["done"]
+
+        if not isinstance(done, bool):
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Done must be a boolean"}
+            )
+
+    for task in db:
+        if task["id"] == id:
+            if "title" in payload:
+                task["title"] = payload["title"].strip()
+
+            if "done" in payload:
+                task["done"] = payload["done"]
+
+            return task
+
+    return JSONResponse(
+        status_code=404,
+        content={"message": f"Task {id} not found"}
+    )
+
+@app.delete("/tasks/{id}")
+def delete_task(id: int, status_code: int = 204):
+    for task in db:
+        if task["id"] == id:
+            db.remove(task)
+            return Response(status_code=status_code)
+    return JSONResponse(
+        status_code=404,
+        content={"message": f"Task {id} not found"}
+    )
